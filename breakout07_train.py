@@ -379,11 +379,11 @@ class agent:
         # initialize
         # discount factor 0.99
         #       DISCFT, FLAG,  INIT_EPSILON,    FIN_EPSILON, REPLAY_MEMORY,  BATCH_SIZE,   ACTIONS
-        ag = DQN(   .956,   0,       1,           0.0001,     300000,        64,         4)
+        ag = DQN(   .956,   0,       1,           0.00001,     300000,        32,         4)
                         # 2.0004979999997333e-06
         g = game.gameState()
 
-        a_0 = np.array([1, 0, 0, 0])
+        a_0 = np.array([0, 1, 0, 0])
         s_0, r_0, d = g.frameStep(a_0)
         # if (ag.episode % 2 == 0):
         #   s_0 = cv2.flip( s_0, 0 )
