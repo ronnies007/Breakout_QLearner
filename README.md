@@ -8,9 +8,13 @@ using:
 - Tensorflow
 - pygame
 - python36
+- RAMDISK is used for saving NetStates 
+- plus a Textfile is saved there, for plotting with matplotlib
 
 
 P.S. I know this code is a mess. sry for that. Im just interested in it.
      If someone has an idea, your welcome !!
+
+- start with: "python breakout07_train.py"
 
 
