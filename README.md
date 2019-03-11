@@ -1,9 +1,9 @@
 # Breakout_QLearner
-THIS IS WORK IN PROGRESS !! - feel free to comment and improve. some stuff is redundant or optional, some is not (yet) fully implemented.
+THIS IS WORK IN PROGRESS !! - feel free to comment and improve. some stuff is redundant or optional, some is not (yet) fully implemented..
 
 
 - my Convolutional-Neural-Network "Rudolf" is learning to play Breakout
-- some stuff was taken from here: https://github.com/Kuax-Meat/Snake-Reinforcement-Deep-Q-Learning
+- some code was taken from here: https://github.com/Kuax-Meat/Snake-Reinforcement-Deep-Q-Learning
 
 using:
 - Tensorflow
