@@ -197,8 +197,6 @@ class DQN:
         os.environ["CUDA_VISIBLE_DEVICES"] = '0,1' #use GPU with ID=0
         conf = tf.ConfigProto()
         # conf.gpu_options.per_process_gpu_memory_fraction = 1
-        
-        
 
         # sess = tf.Session(config = config)
         self.session = tf.InteractiveSession(config=conf)
@@ -209,23 +207,7 @@ class DQN:
         # For fresh start, comment below 2 lines
         if checkpoint and checkpoint.model_checkpoint_path:
             self.saver.restore(self.session, checkpoint.model_checkpoint_path)
-        
-    def addValue(self):
-        print("was here +")
-        self.discft += 0.1
-        cfg.discft += 0.1
-
-    def subtractValue(self):
-        print("was here -")
-        self.discft -= 0.1
-        cfg.discft -= 0.1
-
-    def saveCheckPoint(self):
-        self.saver.save(self.session, self.model_path + 'snake.ckpt', global_step = self.epoch)
-        print("Training Model saving..complete")
-        time.sleep(1)
-        print("..stopped training and closing app.")
-    
+            
     def train(self):
         # DQN
         minibatch = random.sample(self.repmem, self.batchsize)
@@ -241,10 +223,7 @@ class DQN:
         for i in range(0,self.batchsize):
             done = minibatch[i][4]
 
-            # if (len(self.repmem) >= self.batchsize*2) and (len(self.repmem) <= self.REPLAYMEM):
-            #     #print (this_index[i])
-            #     self.repmem[this_index[i]] = (s_batch[i],a_batch[i],r_batch[i],s_t1_batch[i],minibatch[i][4],int(this_replayCount[i])+1,this_index[i], minibatch[i][7])
-
+       
             if done:
                 y_batch.append(r_batch[i])
             else:
@@ -261,37 +240,7 @@ class DQN:
             # pygame.mixer.music.load("C:\\Users\\chefo\\Documents\\LiClipse Workspace\\deep_learner\\qlearner\\Snake-Reinforcement-Deep-Q-Learning-master\\Ring10v.wav")
             # pygame.mixer.music.play()
             cfg.lastSave = time.strftime("%d.%m.%Y %H:%M:%S")
-            # --------------------------------- REPLAYMEMORY reduktion (MAGIC) --------------------------------------
-            # i=len(self.repmem)-1
-            # ll = []
-            # qq = []
-            # for a in range(0,len(self.repmem)):
-            #     ll.append(self.repmem[a][5])
-            #     qq.append(self.repmem[a][7])
-            # count = 0
-            # limit = int(np.max(ll) - (np.mean(ll)/3.14159265359))
-            # qlimit = float(np.min(qq) + (np.mean(qq)/2)) #3.14159265359))
-            # if (int(limit) > 5):
-            #     for a in range(0,len(self.repmem)):
-            #         #print (np.min(qlimit))
-            #         if (self.repmem[i][7] <= qlimit) or (self.repmem[i][5] >= limit): 
-                        
-            #             print ("********** Memory-Entry deleted ! *************  nr.",i,"count:",str(self.repmem[i][5])," qv:",str(qlimit))  #  
-            #             del self.repmem[i]
-            #             count +=1
-            #         else:
-            #             pass
-            #         i -=1
-            # print ("llmax, llmean: ", np.max(ll),",", np.mean(ll))
-            # print ("qqmin, qqmean: ", np.min(qq),",", np.mean(qq))
-            
-            # print (count,"eintraege aus dem 'repmem' geloescht.")
-            # if not (count == 0):
-            #     print ("indiziere replay memory neu..")
-            #     for i in range(0,len(self.repmem)):
-            #         self.repmem[i] = (self.repmem[i][0],self.repmem[i][1],self.repmem[i][2],self.repmem[i][3],self.repmem[i][4],self.repmem[i][5],i,self.repmem[i][7])
-            #         print ("nr.",i,end="\r")
-            #     print ("...fertig")
+       
 
 
         self.episode += 1
@@ -299,7 +248,7 @@ class DQN:
 
     def addReplay(self, s_t1, action, reward, done):
         global eps
-        # action[0] up    #action[1] down    #action[2] left    #action[3] right
+         # action[0] LEFT    #action[1] MIDDLE    #action[2] RIGHT    #action[3] BUTTON
         tmp = np.append(self.s_t[:,:,1:], s_t1, axis = 2)
         self.repmem.append((   self.s_t, action, reward, tmp, done, int(0), int(len(self.repmem)-1), np.max(self.qv)   ))
 
@@ -322,7 +271,7 @@ class DQN:
     def getAction(self):
         global eps
 
-        # action[0] up    #action[1] down    #action[2] left    #action[3] right
+        # action[0] LEFT    #action[1] MIDDLE    #action[2] RIGHT    #action[3] BUTTON
 
         Q_val = self.output.eval(feed_dict={self.input : [self.s_t]})[0]
 
@@ -411,39 +360,6 @@ class agent:
         self.ts_old = int(0)
         self.rew = int(0)
         self.stepTime = float(0)
-
-    def on_press(self, key):
-        global ag
-        sys.stdout.flush()
-        try:
-            print('alphanumeric key {0} pressed'.format(
-                key.char))
-           # if (str(format(key.char)) == "+"):
-           #     ag.addValue()
-
-          #  if (str(format(key.char)) == "-"):
-           #     ag.subtractValue()
-            
-            if (str(format(key.char)) == "ESC"):
-                ag.saveCheckPoint()
-                sys.exit()
-
-        except AttributeError:
-            print('special key {0} pressed'.format(
-                key))
-
-            if (str(format(key)) == "ESC"):
-                sys.exit()
-
-        
-
-
-    def on_release(self, key):
-        print('{0} released'.format(
-            key))
-        if key == keyboard.Key.esc:
-            # Stop listener
-            return False
 
 
     def screen_handle(self, screen, a): 
