@@ -123,7 +123,7 @@ class gameState:
         def runGame(self, action):
             global run
             pygame.event.pump()
-            #--->         # action[0] up    #action[1] down    #action[2] left    #action[3] right
+            #--->         # action[0] LEFT    #action[1] MIDDLE    #action[2] RIGHT    #action[3] BUTTON
             self.pre_direction = self.direction    
             if (action[0] == 1):
                 self.direction = LEFT
@@ -135,7 +135,6 @@ class gameState:
                 self.direction = BUTTON
            
             self.reward = -0.1       
-            oldscore = self.score
             done = False
             # print ("polycollList len:",len(self.polyCollissionList))
             if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
@@ -181,18 +180,25 @@ class gameState:
                                                     if event.type == pygame.KEYDOWN:
                                                             if event.key == pygame.K_SPACE:        
                                                                     done2=True
-
+            oldscore = self.score
             if not (self.deleteThis == -1):
-                del self.polyCollissionList[self.deleteThis]
+                del self.polyCollissionList[self.deleteThis]        
                 self.score += 3
                 self.totalscore += 3
                 # print ("len(polyCollissionList):",len(self.polyCollissionList))
                 self.deleteThis = -1
                 self.reward = 1
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
+                cfg.aliveGameTime = time.time()
                 return image_data, self.reward, done
 
+            if (math.fmod((time.time()-cfg.aliveGameTime),60) > 40) and (self.score == oldscore):
+                self.initBricks()
+                self.newBall()
+
+
             self.bounceBall()
+
             if not (self.ballMoveVector == 0,0):
                 self.ballMoveVector = self.ballMoveVector.normalize()
                 self.ballMoveVector = self.ballMoveVector*self.ball.getSpeed()
@@ -281,8 +287,7 @@ class gameState:
                 #        pygame.draw.polygon(self.screen, (225, 100, 100), self.collLineList[j], 2)        
                 
                 #  -------------  Leerlauf-Watchdog  -------------
-                if (int((time.time() - cfg.aliveGameTime)%60) > 50) and (self.score == oldscore):
-                        self.__init__()
+               
                         #self.newBall()
                         # minute = now / 60
                         # seconds = now % 60        
@@ -295,7 +300,8 @@ class gameState:
                 pygame.display.update()
                 self.scA = []
                 if (done==True): 
-                        cfg.aliveGameTime = time.time() - cfg.aliveGameTime
+                        #cfg.aliveGameTime = time.time() - cfg.aliveGameTime
+                        pass
 
                 self.totalreward.append(self.reward)
                 return image_data, self.reward, done
