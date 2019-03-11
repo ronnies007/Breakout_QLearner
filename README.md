@@ -6,7 +6,7 @@ THIS IS WORK IN PROGRESS !! - feel free to comment and improve. some stuff is re
 - some code was taken from here: https://github.com/Kuax-Meat/Snake-Reinforcement-Deep-Q-Learning
 
 using:
-- Tensorflow
+- Tensorflow 1.9.0
 - pygame
 - python36
 - RAMDISK is used for saving NetStates 
