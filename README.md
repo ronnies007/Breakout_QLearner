@@ -1,4 +1,5 @@
 # Breakout_QLearner
+THIS IS WORK IN PROGRESS !! - feel free to comment.
 making my CNN-neural-Network learning to play Breakout 
 some stuff was taken from here: https://github.com/Kuax-Meat/Snake-Reinforcement-Deep-Q-Learning
 
