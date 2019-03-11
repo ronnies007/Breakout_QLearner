@@ -323,9 +323,9 @@ class gameState:
             i = int(0)
             self.polyCollissionList = []
             vPlus = 0
-            hPlus = 35
-            columns = 4
-            rows = 4
+            hPlus = 25
+            columns = 9
+            rows = 6
             count = int(0)
             for z in range(0,rows):
                     hPlus = 25
@@ -333,7 +333,7 @@ class gameState:
                             self.xybrickList = []
                             #self.brick = brick.newBrick(count, 1)
                             for x,y in self.brickPointList:
-                                    posCroud = [self.FIELDWIDTH/2-columns*20, self.FIELDHEIGHT/3-rows*10]
+                                    posCroud = [self.FIELDWIDTH/2-columns*20, self.FIELDHEIGHT/3-rows*15]
                                     self.xybrickList.append([x+hPlus+posCroud[0], y+vPlus+posCroud[1]])
                                     
                             hPlus += 35
