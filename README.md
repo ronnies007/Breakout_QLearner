@@ -18,6 +18,6 @@ P.S. I know this code is a mess. sry for that. Im just interested in it.
 
 - start with: "python breakout07_train.py" and work through the errors until it is running. ; ) have fun.
 - e.g. I have set up a dual graphics-card system. u can get rid of those lines if u do not use two cards.
-- Oh my gosh!, it´s actually learning..
+- ...........Oh my gosh!, it´s actually learning..
 
 
