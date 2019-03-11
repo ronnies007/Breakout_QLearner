@@ -10,12 +10,13 @@ using:
 - pygame
 - python36
 - RAMDISK is used for saving NetStates 
-- plus a Textfile is saved there, for plotting with matplotlib
+- plus a Textfile is saved there, for plotting with matplotlib (CNNDiagramm.py)
 
 
 P.S. I know this code is a mess. sry for that. Im just interested in it.
      If someone has an idea, your welcome !!
 
-- start with: "python breakout07_train.py"
+- start with: "python breakout07_train.py" and work through the errors until it is running. ; ) have fun.
+- Oh my gosh!, it´s actually learning..
 
 
