@@ -192,7 +192,7 @@ class gameState:
                 cfg.aliveGameTime = time.time()
                 return image_data, self.reward, done
 
-            if (math.fmod((time.time()-cfg.aliveGameTime),60) > 40) and (self.score == oldscore):
+            if (math.fmod((time.time()-cfg.aliveGameTime),60) > 70) and (self.score == oldscore):
                 self.initBricks()
                 self.newBall()
 
