@@ -19,8 +19,8 @@ print (datetime.datetime.now().strftime(dateString))
 stepTime = float(0)
 aliveGameTime = time.time()
 lastSave = time.strftime("%d.%m.%Y %H:%M:%S")
-model_path = 'R:\\'
-states_path = 'R:\\'
+model_path = 'R:\\temp\\'
+states_path = 'R:\\temp\\'
 #mainPath = 'C:\\Users\\me\\Documents\\LiCliPseWorkspace\\CNN_Snake_SelfLearning\\'
 lastRun = 0
 qLive = []
