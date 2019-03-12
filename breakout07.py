@@ -134,7 +134,7 @@ class gameState:
             elif (action[3] == 1):
                 self.direction = BUTTON
            
-            self.reward -= 0.00343       
+            self.reward -= 0.0000532 * (len(self.polyCollissionList)-2)
             done = False
             # print ("polycollList len:",len(self.polyCollissionList))
             if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
@@ -185,9 +185,9 @@ class gameState:
             # -------------------------------   BRICK getroffen ?? --> hier wird er geloescht !!  -------------------------------
             if not (self.deleteThis == -1):
                 del self.polyCollissionList[self.deleteThis]        
-                self.score += 3
+                self.score += 1
                 
-                self.totalscore += 3
+                self.totalscore += 1
                 # print ("len(polyCollissionList):",len(self.polyCollissionList))
                 self.deleteThis = -1
                 self.reward += 1
@@ -220,7 +220,7 @@ class gameState:
             self.posY = int(self.posY)
 
             if (self.posY >= self.FIELDHEIGHT ):   # ---  ball CRASHED  ---
-                self.reward = -10
+                self.reward = -8 # -54 / (len(self.polyCollissionList)-2)
                 done = True
                 # print("WAS HERE CRASHED !!!")
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
