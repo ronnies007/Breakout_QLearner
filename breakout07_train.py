@@ -33,9 +33,9 @@ class DQN:
         self.run_old = self.run
         self.epoch = int(0)    # frame
         self.episode = int(0)  # training runs     
-        self.observe = int(20000) # vorlauf-frame ohne training
+        self.observe = int(5000) # vorlauf-frame ohne training
         self.step = self.observe #fixed observer value
-        self.discft = 0.934 #DISCFT 0.9993
+        self.discft = 0.634 #DISCFT 0.9993
         cfg.discft = self.discft
         self.multiplier = float(30000/self.observe) #for saving (multiplies with self.observe)
         self.fpl = []
@@ -52,9 +52,9 @@ class DQN:
         self.repmem = deque()
         self.reduce = 1000000
         self.reduce_main = 1000000  # self.reduce
-        self.logs_path = '\\\\127.0.0.1\\temp\\'
-        self.model_path = '\\\\127.0.0.1\\temp\\'
-        self.states_path = '\\\\127.0.0.1\\temp\\'
+        self.logs_path = 'R:\\temp\\' # '\\\\127.0.0.1\\temp\\'
+        self.model_path = 'R:\\temp\\' # '\\\\127.0.0.1\\temp\\'
+        self.states_path = 'R:\\temp\\'
         self.memSaid = 0
         self.memoryReplayCount = 250
         self.startReduce = False
@@ -317,7 +317,7 @@ class DQN:
             pass
             
                 # ------------------------------------------------------- #
-        if (self.run % 5 == 0) and (self.epoch > self.step) and not (self.run_old == self.run):  # 
+        if (self.run % 15 == 0) and (self.epoch > self.step) and not (self.run_old == self.run):  # 
                 # ---------------------------------------  save trainingstates  --------------------------------------------------
                 fl = open(self.states_path +'training_states.txt',"a") #states.txt' + time.strftime("%d.%m.%Y_%H_%M_%S" + '
                 # time  |  epsilon  |  Q-value  |  run  |  fpl  |  epoch  |  totalscore
@@ -325,7 +325,7 @@ class DQN:
                 fl.write("|")
                 fl.write(str(self.epsilon))
                 fl.write("|")
-                sqv = str(np.max(self.myQV))
+                sqv = str(np.mean(self.qv))
                 fl.write(sqv) #np.max(self.qv)
                 fl.write("|")
                 fl.write(str(int(self.run) + int(cfg.lastRun)))
@@ -417,7 +417,7 @@ class agent:
                 sc, ep = g.retScore()
                 cfg.totalScore = sc
                 self.ts_old = ts
-                self.stepTime = round(time.time() - now_time, 5)
+                self.stepTime = round((time.time() - now_time)%60, 5)
                 # print(ts,",",qv,",",ep, ",", sc)
                 print("discft:", round(cfg.discft,4), "repmem:", len(ag.repmem), "run:", ag.run,"episode:",ag.episode,"score:", sc,"rew:", r,"frame:", ts,"qv:", round(qv,3),"fpl:",fpl,"epsilon:",round(ag.epsilon,6), "stepTime:", self.stepTime)
                 # print ("                                  lastSave: ", cfg.lastSave)
