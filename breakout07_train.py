@@ -33,20 +33,20 @@ class DQN:
         self.run_old = self.run
         self.epoch = int(0)    # frame
         self.episode = int(0)  # training runs     
-        self.observe = int(10000) # vorlauf-frame ohne training
+        self.observe = int(20000) # vorlauf-frame ohne training
         self.step = self.observe #fixed observer value
         self.discft = 0.934 #DISCFT 0.9993
         cfg.discft = self.discft
-        self.multiplier = float(5000/self.observe) #for saving (multiplies with self.observe)
+        self.multiplier = float(30000/self.observe) #for saving (multiplies with self.observe)
         self.fpl = []
         self.myQV = []
         self.score = []
         self.obergrenze = int(28)
         self.flag = FLAG
         self.epsilon = INIT_EPSILON
-        self.epsilon_main = 0.5 #INIT_EPSILON
+        self.epsilon_main = 0.3 #INIT_EPSILON
         self.finep = FIN_EPSILON
-        self.REPLAYMEM = REPLAY_MEMORY
+        self.REPLAYMEM = 50000 # REPLAY_MEMORY
         self.batchsize = BATCH_SIZE
         self.actions = ACTIONS
         self.repmem = deque()
@@ -116,21 +116,21 @@ class DQN:
             self.w2 = tf.Variable(tf.truncated_normal([4, 4, 32, 64], stddev=0.01))
             self.b2 = tf.Variable(tf.constant(0.01, shape = [64]))
 
-        with tf.device('/gpu:0'):
             self.w3 = tf.Variable(tf.truncated_normal([3, 3, 64, 64], stddev = 0.01))
             self.b3 = tf.Variable(tf.constant(0.01, shape = [64]))
 
-           # self.wfc = tf.Variable(tf.truncated_normal([2304, 2304], stddev = 0.01)) # 2304,2000
-          #  self.bfc = tf.Variable(tf.constant(0.01, shape = [2304])) #2000
+        with tf.device('/gpu:0'):
+            self.wfc = tf.Variable(tf.truncated_normal([2304, 2304], stddev = 0.01)) # 2304,2000
+            self.bfc = tf.Variable(tf.constant(0.01, shape = [2304])) #2000
 
-            self.wfc1 = tf.Variable(tf.truncated_normal([2304, 1028], stddev = 0.01)) #2000,1000
-            self.bfc1 = tf.Variable(tf.constant(0.01, shape = [1028])) #1000
-
-            self.wfc2 = tf.Variable(tf.truncated_normal([1028, 1000], stddev = 0.01)) #1000,972
-            self.bfc2 = tf.Variable(tf.constant(0.01, shape = [1000])) #972
+            self.wfc1 = tf.Variable(tf.truncated_normal([2304, 2056], stddev = 0.01)) #2000,1000
+            self.bfc1 = tf.Variable(tf.constant(0.01, shape = [2056])) #1000
 
         with tf.device('/gpu:1'):
-            self.wfc3 = tf.Variable(tf.truncated_normal([1000, 512], stddev = 0.01)) #972,512
+            self.wfc2 = tf.Variable(tf.truncated_normal([2056, 1028], stddev = 0.01)) #1000,972
+            self.bfc2 = tf.Variable(tf.constant(0.01, shape = [1028])) #972
+
+            self.wfc3 = tf.Variable(tf.truncated_normal([1028, 512], stddev = 0.01)) #972,512
             self.bfc3 = tf.Variable(tf.constant(0.01, shape = [512])) #512
             #tf.summary.histogram("self.wfc2", self.wfc2)
 
@@ -167,12 +167,13 @@ class DQN:
             #fullyconnected = tf.nn.relu(tf.matmul(conv3_to_reshaped, self.wfc) + self.bfc)
             # Matrix (1, 2304) * (2304, 512)
 
-            # Matrix (1, 2304) * (2304, 512)
-            #fullyconnected = tf.nn.relu(tf.matmul(conv3_to_reshaped, self.wfc) + self.bfc)
-            # Matrix (1, 2304) * (2304, 512)
-
         with tf.device('/gpu:1'):
-            fullyconnected1 = tf.nn.relu(tf.matmul(conv3_to_reshaped, self.wfc1) + self.bfc1)     
+            # Matrix (1, 2304) * (2304, 512)
+            fullyconnected = tf.nn.relu(tf.matmul(conv3_to_reshaped, self.wfc) + self.bfc)
+            # Matrix (1, 2304) * (2304, 2304)
+
+        
+            fullyconnected1 = tf.nn.relu(tf.matmul(fullyconnected, self.wfc1) + self.bfc1)     
             # Matrix (1, 2304) * (2304, 512)
             
             fullyconnected2 = tf.nn.relu(tf.matmul(fullyconnected1, self.wfc2) + self.bfc2)     
@@ -276,7 +277,7 @@ class DQN:
         Q_val = self.output.eval(feed_dict={self.input : [self.s_t]})[0]
 
         self.qv = Q_val
-        self.myQV.append(self.qv)
+        self.myQV.append(np.max(self.qv))
         cfg.qValue = float(np.max(self.myQV))
 
         if  (len(self.repmem) > 5000): # (cfg.qValue > 0) and 
@@ -316,7 +317,7 @@ class DQN:
             pass
             
                 # ------------------------------------------------------- #
-        if (self.run % 10 == 0) and (self.epoch > self.step) and not (self.run_old == self.run):  # 
+        if (self.run % 5 == 0) and (self.epoch > self.step) and not (self.run_old == self.run):  # 
                 # ---------------------------------------  save trainingstates  --------------------------------------------------
                 fl = open(self.states_path +'training_states.txt',"a") #states.txt' + time.strftime("%d.%m.%Y_%H_%M_%S" + '
                 # time  |  epsilon  |  Q-value  |  run  |  fpl  |  epoch  |  totalscore
@@ -379,7 +380,7 @@ class agent:
         # initialize
         # discount factor 0.99
         #       DISCFT, FLAG,  INIT_EPSILON,    FIN_EPSILON, REPLAY_MEMORY,  BATCH_SIZE,   ACTIONS
-        ag = DQN(   .956,   0,       1,           0.00001,     300000,        32,         4)
+        ag = DQN(   .956,   0,       1,           0.000001,     300000,        32,         4)
                         # 2.0004979999997333e-06
         g = game.gameState()
 
@@ -416,6 +417,7 @@ class agent:
                 sc, ep = g.retScore()
                 cfg.totalScore = sc
                 self.ts_old = ts
+                self.stepTime = round(time.time() - now_time, 5)
                 # print(ts,",",qv,",",ep, ",", sc)
                 print("discft:", round(cfg.discft,4), "repmem:", len(ag.repmem), "run:", ag.run,"episode:",ag.episode,"score:", sc,"rew:", r,"frame:", ts,"qv:", round(qv,3),"fpl:",fpl,"epsilon:",round(ag.epsilon,6), "stepTime:", self.stepTime)
                 # print ("                                  lastSave: ", cfg.lastSave)
@@ -425,10 +427,13 @@ class agent:
                 ag.score = []
                 
             else:
-                if (r>=10) and (sc):          
+                self.stepTime = round(time.time() - now_time, 5)
+                sc, ep = g.retScore2()
+                cfg.totalScore = sc
+                if (sc > 0):          
                     print("discft:", round(cfg.discft,4), "repmem:", len(ag.repmem), "run:", ag.run,"episode:",ag.episode,"score:", sc,"rew:", r,"frame:", ts,"qv:", round(qv,3),"fpl:",fpl,"epsilon:",round(ag.epsilon,6), "stepTime:", self.stepTime)
                 # print ("                                         lastSave: ", cfg.lastSave)
-                    print("                                                                                                               **Apple!**", end="\r")
+                  #  print("                                                                                                               **Apple!**", end="\r")
                     print(end="\r")
                 #   sys.stdout.write("\033[F") # Cursor up one line
                     
