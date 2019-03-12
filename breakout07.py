@@ -15,7 +15,7 @@ from shapely.geometry.polygon import Polygon
 from datetime import datetime, timedelta, time
 import time
 
-FPS = 60
+FPS = 800
 WINDOWWIDTH = 360 # 500
 WINDOWHEIGHT = 420 # 800
 FIELDHEIGHT = 420 # 650
@@ -134,7 +134,7 @@ class gameState:
             elif (action[3] == 1):
                 self.direction = BUTTON
            
-            self.reward = -0.1       
+            self.reward -= 0.00343       
             done = False
             # print ("polycollList len:",len(self.polyCollissionList))
             if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
@@ -180,28 +180,35 @@ class gameState:
                                                     if event.type == pygame.KEYDOWN:
                                                             if event.key == pygame.K_SPACE:        
                                                                     done2=True
-            oldscore = self.score
+
+            
+            # -------------------------------   BRICK getroffen ?? --> hier wird er geloescht !!  -------------------------------
             if not (self.deleteThis == -1):
                 del self.polyCollissionList[self.deleteThis]        
                 self.score += 3
+                
                 self.totalscore += 3
                 # print ("len(polyCollissionList):",len(self.polyCollissionList))
                 self.deleteThis = -1
-                self.reward = 1
+                self.reward += 1
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
                 cfg.aliveGameTime = time.time()
                 return image_data, self.reward, done
 
+            # -------------------------------   LEERLAUF-WATCHDOG   # -------------------------------   
             if (math.fmod((time.time()-cfg.aliveGameTime),60) > 70) and (self.score == oldscore):
+                image_data = pygame.surfarray.array3d(pygame.display.get_surface())
                 self.initBricks()
                 self.newBall()
+                cfg.aliveGameTime = time.time()
+                return image_data, self.reward, done
 
-
+            oldscore = self.score
             self.bounceBall()
-
             if not (self.ballMoveVector == 0,0):
                 self.ballMoveVector = self.ballMoveVector.normalize()
                 self.ballMoveVector = self.ballMoveVector*self.ball.getSpeed()
+
             self.velX, self.velY = self.ballMoveVector
             self.posX += self.velX
             self.posY += self.velY
@@ -209,7 +216,6 @@ class gameState:
             self.posY = math.floor(self.posY+0.5)
             self.ballSpeed, self.ballAngle = self.ballMoveVector.as_polar()
             self.ball.setAngle(self.ballAngle)
-            #self.ball.setSpeed(self.ballSpeed)
             self.posX = int(self.posX)
             self.posY = int(self.posY)
 
@@ -589,6 +595,14 @@ class gameState:
             self.newBall()
             return tmp1, tmp2 
 
+        def retScore2(self):
+            global run
+            run +=1
+            #print("WAS HERE retScore")
+            tmp1 = self.score
+            tmp2 = run
+            #self.newBall()
+            return tmp1, tmp2 
 
         def reflectBall(self,poly,ind,t1,t2,si):
                 t1 = pygame.math.Vector2(t1)
