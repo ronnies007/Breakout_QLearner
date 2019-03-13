@@ -135,7 +135,7 @@ class gameState:
             elif (action[3] == 1):
                 self.direction = BUTTON
            
-            self.reward = -1 # -= 0.0000532 * (len(self.polyCollissionList)-2)
+            self.reward = -0.21 # -= 0.0000532 * (len(self.polyCollissionList)-2)
             done = False
             # print ("polycollList len:",len(self.polyCollissionList))
             if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
