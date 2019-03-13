@@ -1,7 +1,6 @@
-import random, pygame, sys
+import random, sys, os
 from pygame.locals import *
 import config as cfg
-
 import pygame
 import pygame.freetype  # Import the freetype module.
 import math
@@ -96,8 +95,8 @@ class gameState:
                 self.score = int(0)
                 self.polyCollissionList = []
                 self.mouseVelX , self.mouseVelY = 0,0
-                self.rewardSave = float(-0.1)
-                self.reward = float(-0.1)
+                self.rewardSave = float(-0.5)
+                self.reward = float(-0.5)
                 self.framesAlive = int(0)
                 self.scA = []
                 self.gridx = []
@@ -109,11 +108,13 @@ class gameState:
                 self.secondsAlive = []
                 self.time_stop = datetime(2019,3,6,0,0,0)   
                 self.polyCollissionList = [self.paddlePointList,self.borderPointList]
+                self.ballAlive_frames = 0
 
 
         def frameStep(self, action):
             global run
             self.framesAlive += 1
+            self.ballAlive_frames += 1
             #sf = pygame.Surface.convert(self.screen) 
             #self.scA.append(sf)
             image_data, reward, done = self.runGame(action)
@@ -134,7 +135,7 @@ class gameState:
             elif (action[3] == 1):
                 self.direction = BUTTON
            
-            self.reward -= 0.0000532 * (len(self.polyCollissionList)-2)
+            self.reward = -1 # -= 0.0000532 * (len(self.polyCollissionList)-2)
             done = False
             # print ("polycollList len:",len(self.polyCollissionList))
             if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
@@ -186,7 +187,7 @@ class gameState:
             if not (self.deleteThis == -1):
                 del self.polyCollissionList[self.deleteThis]        
                 self.score += 1
-                
+                self.ballAlive_frames = 0
                 self.totalscore += 1
                 # print ("len(polyCollissionList):",len(self.polyCollissionList))
                 self.deleteThis = -1
@@ -195,13 +196,6 @@ class gameState:
                 cfg.aliveGameTime = time.time()
                 return image_data, self.reward, done
 
-            # -------------------------------   LEERLAUF-WATCHDOG   # -------------------------------   
-            if (math.fmod((time.time()-cfg.aliveGameTime),60) > 70) and (self.score == oldscore):
-                image_data = pygame.surfarray.array3d(pygame.display.get_surface())
-                self.initBricks()
-                self.newBall()
-                cfg.aliveGameTime = time.time()
-                return image_data, self.reward, done
 
             oldscore = self.score
             self.bounceBall()
@@ -259,16 +253,20 @@ class gameState:
                     elif self.direction == BUTTON:  
                         #print ("BUTTON pressed !!!") 
                         if (cfg.ballReleased == False): 
-                            cfg.ballReleased = True       
+                            cfg.ballReleased = True  
                             if (self.pre_direction == RIGHT):   self.velX = 1
                             elif (self.pre_direction == LEFT):   self.velX = -1
-                            elif (self.pre_direction == MIDDLE):         
-                                while (self.velX ==0):      
+                            elif (self.pre_direction == MIDDLE):  
+                                while (self.velX == 0):
                                         self.velX = random.randint(-1,1)
+                            else:       
+                                while (self.velX == 0):
+                                        self.velX = random.randint(-1,1)
+
                             self.velY = -1
                             self.ballMoveVector = pygame.math.Vector2([self.velX,self.velY])    
                             self.velX, self.velY = self.ballMoveVector
-                            if not (self.ballMoveVector == 0,0):
+                            if not ([int(self.velX),int(self.velY)] == 0,0):
                                 self.ballMoveVector = self.ballMoveVector.normalize()
                             self.ballMoveVector = self.ballMoveVector*self.ball.getSpeed()         
                             #print ("BUTTON pressed !!!",self.ballMoveVector,self.ball.getSpeed())
@@ -293,11 +291,26 @@ class gameState:
                 #        pygame.draw.polygon(self.screen, (225, 100, 100), self.collLineList[j], 2)        
                 
                 #  -------------  Leerlauf-Watchdog  -------------
-               
-                        #self.newBall()
+                #print (self.ballAlive_frames)
+                cfg.ballAlive_frames = self.ballAlive_frames
+                if (self.ballAlive_frames > 3600) and (cfg.ballReleased == True):
+                        fl = open("r://WATCHDOG-alert.txt","a")
+                        time.sleep(.5)
+                        fl.write("\r\n") 
+                        fl.write("alert at: ")
+                        fl.write(str(time.strftime("%d.%m.%Y %H:%M:%S")))
+                        fl.write("   "+str(self.posX)+", "+str(self.posY))
+                        fl.close()  
+                        time.sleep(.5)        
+                        print("WATCHDOG alert!! ballPos:", self.posX, self.posY)
+                        self.initBricks()
+                        self.newBall()
+                        
                         # minute = now / 60
                         # seconds = now % 60        
                         #now = time.ctime(int(time.time()))
+                #  -----------------------------------------------
+                        
                 if (self.leng >= self.ball.getRadius()):
                         self.leng = 0
 
@@ -554,6 +567,7 @@ class gameState:
 
         def newBall(self):
             #print("WAS HERE NEWBALL,self")
+            self.ballAlive_frames = 0
             cfg.ballReleased = False
             self.gameRun += 1
             self.posX = int(self.FIELDWIDTH/2+30)
@@ -573,8 +587,8 @@ class gameState:
             #self.ballSpeed = math.sqrt( (self.velX*self.velX) + (self.velY*self.velY) )
             self.score = int(0)
             #self.totalscore = int(0)
-            self.rewardSave = float(-0.1)
-            self.reward = float(-0.1)
+            self.rewardSave = float(-0.5)
+            self.reward = float(-0.5)
             self.framesAlive = int(0)
             self.scA = []
             self.gridx = []
@@ -597,7 +611,7 @@ class gameState:
 
         def retScore2(self):
             global run
-            run +=1
+            #run +=1
             #print("WAS HERE retScore")
             tmp1 = self.score
             tmp2 = run
