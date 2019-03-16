@@ -1,10 +1,12 @@
 import time, datetime
 
-FPS = 60
+FPS = 800
 WINDOWWIDTH = 360 # 500
-SCREENWIDTH = 360 # 500
 WINDOWHEIGHT = 420 # 800
+FIELDWIDTH = 360 # 650
 FIELDHEIGHT = 420 # 650
+SCREENWIDTH = 360 # 650
+SCREENHEIGHT = 420 # 650
 ballReleased = False
 myList = []
 dateString = '%d.%m.%Y %H:%M:%S'
@@ -30,3 +32,8 @@ epsilonLive = []
 lastRun = 0
 diagON = int(0)
 discft = int(0)
+reward = float(-0.1)
+ballAlive_frames = int(0)
+rundenZeit = float(0)
+thisRundenZeit = ""
+done = False
