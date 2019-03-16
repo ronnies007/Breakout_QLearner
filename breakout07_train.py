@@ -422,6 +422,9 @@ class agent:
             now_time = time.time()
             a = ag.getAction()
             s_t1, r, done = g.frameStep(a) # get infos (state) from game
+            if (cfg.done == False):
+                cfg.done = done
+
             cfg.reward = r
             s_t1, a = self.screen_handle(s_t1,a) 
             ts, qv = ag.addReplay(s_t1, a, r, done)
@@ -437,7 +440,7 @@ class agent:
             ag.stepTime = str(self.stepTime)
             cfg.stepTime = self.stepTime
             if done == True:
-                cfg.done = done
+                
                 sc, ep = g.retScore()
                 cfg.totalScore = sc
                 self.ts_old = ts
