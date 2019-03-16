@@ -95,8 +95,8 @@ class gameState:
                 self.score = int(0)
                 self.polyCollissionList = []
                 self.mouseVelX , self.mouseVelY = 0,0
-                self.rewardSave = float(-0.5)
-                self.reward = float(-0.5)
+                self.rewardSave = float(-0.1)
+                self.reward = float(-0.1)
                 self.framesAlive = int(0)
                 self.scA = []
                 self.gridx = []
@@ -118,6 +118,7 @@ class gameState:
             #sf = pygame.Surface.convert(self.screen) 
             #self.scA.append(sf)
             image_data, reward, done = self.runGame(action)
+            cfg.reward = self.reward
             return image_data, reward, done
 
 
@@ -135,7 +136,8 @@ class gameState:
             elif (action[3] == 1):
                 self.direction = BUTTON
            
-            self.reward = -0.21 # -= 0.0000532 * (len(self.polyCollissionList)-2)
+            self.reward = -0.1 # -= 0.0000532 * (len(self.polyCollissionList)-2)
+            cfg.reward = self.reward
             done = False
             # print ("polycollList len:",len(self.polyCollissionList))
             if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
@@ -191,7 +193,8 @@ class gameState:
                 self.totalscore += 1
                 # print ("len(polyCollissionList):",len(self.polyCollissionList))
                 self.deleteThis = -1
-                self.reward += 1
+                self.reward = 3
+                cfg.reward = self.reward
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
                 cfg.aliveGameTime = time.time()
                 return image_data, self.reward, done
@@ -214,7 +217,8 @@ class gameState:
             self.posY = int(self.posY)
 
             if (self.posY >= self.FIELDHEIGHT ):   # ---  ball CRASHED  ---
-                self.reward = -8 # -54 / (len(self.polyCollissionList)-2)
+                self.reward = -10 # -54 / (len(self.polyCollissionList)-2)
+                cfg.reward = self.reward
                 done = True
                 # print("WAS HERE CRASHED !!!")
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
@@ -319,10 +323,12 @@ class gameState:
                 pygame.display.update()
                 self.scA = []
                 if (done==True): 
-                        #cfg.aliveGameTime = time.time() - cfg.aliveGameTime
+                        cfg.aliveGameTime = time.time() - cfg.aliveGameTime
+                        #cfg.framesPerLife = 0
+
                         pass
 
-                self.totalreward.append(self.reward)
+                #self.totalreward.append(self.reward)
                 return image_data, self.reward, done
 
 
@@ -363,6 +369,7 @@ class gameState:
             self.polyCollissionList = [self.paddlePointList,self.borderPointList]
             self.polyCollissionList.extend(self.brickMuster)
             self.collLineList = []
+            cfg.rundenZeit = time.time()
 
 
         def bounceBall(self):
@@ -569,9 +576,17 @@ class gameState:
             #print("WAS HERE NEWBALL,self")
             self.ballAlive_frames = 0
             cfg.ballReleased = False
+            cfg.aliveGameTime = time.time()
             self.gameRun += 1
-            self.posX = int(self.FIELDWIDTH/2+30)
-            self.posY = int(self.FIELDHEIGHT-40-10)
+            self.paddlePointList = [[0,5],[5,0],[55,0],[60,5],[60,15],[0,15],[0,5]]
+            self.xyPlayerList =[]
+            randomPaddleX = random.randint(5,self.FIELDWIDTH-65)
+            for x,y in self.paddlePointList:
+                    self.xyPlayerList.append([x+int(randomPaddleX), y+self.FIELDHEIGHT-40])
+            self.paddlePointList = self.xyPlayerList
+
+            self.posX = int(self.paddlePointList[1][0]+21)
+            self.posY = int(self.paddlePointList[1][1]-self.ball.getRadius()-2)
             self.ball = ball.newBall(0) 
             self.ball.setPos([self.posX,self.posY])
             self.velX = int(0)
@@ -579,16 +594,13 @@ class gameState:
             self.ballRadius = int(10)
             self.ballMoveVector = pygame.math.Vector2([self.velX,self.velY])
             self.done = False
-            self.paddlePointList = [[0,5],[5,0],[55,0],[60,5],[60,15],[0,15],[0,5]]
-            self.xyPlayerList =[]
-            for x,y in self.paddlePointList:
-                    self.xyPlayerList.append([x+int(self.FIELDWIDTH/2), y+self.FIELDHEIGHT-40])
-            self.paddlePointList = self.xyPlayerList
+            
             #self.ballSpeed = math.sqrt( (self.velX*self.velX) + (self.velY*self.velY) )
             self.score = int(0)
             #self.totalscore = int(0)
-            self.rewardSave = float(-0.5)
-            self.reward = float(-0.5)
+            self.rewardSave = float(-0.1)
+            self.reward = float(-0.1)
+            cfg.reward = self.reward
             self.framesAlive = int(0)
             self.scA = []
             self.gridx = []
@@ -600,22 +612,20 @@ class gameState:
                 self.polyCollissionList = [self.paddlePointList,self.borderPointList]
 
 
-        def retScore(self):
+        def retScore(self):  # -----------  ball crashed
             global run
             run +=1
+           # cfg.rundenZeit = time.time()
             #print("WAS HERE retScore")
             tmp1 = self.score
             tmp2 = run
             self.newBall()
             return tmp1, tmp2 
 
-        def retScore2(self):
+        def retScore2(self):  # -----------  normaler framestep waehrend dem spiel
             global run
-            #run +=1
-            #print("WAS HERE retScore")
             tmp1 = self.score
             tmp2 = run
-            #self.newBall()
             return tmp1, tmp2 
 
         def reflectBall(self,poly,ind,t1,t2,si):
@@ -670,11 +680,11 @@ class gameState:
 
 
         def distance(self,a,b):
-                return sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
+                return math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
 
 
         def is_between(self,a,c,b):
-                return distance(a,c) + distance(c,b) == distance(a,b)
+                return self.distance(a,c) + self.distance(c,b) == self.distance(a,b)
 
 
         def text_objects(self, text, font):
