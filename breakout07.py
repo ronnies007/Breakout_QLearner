@@ -723,6 +723,6 @@ if __name__ == '__main__':
     pygame.init()
     g = gameState()
     while True:
-        g.runGame([0,0,0,1])
+        g.runGame([0,1,0,0])
         #time.sleep(2)
 # g.message_display('You Crashed')
