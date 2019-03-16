@@ -33,9 +33,9 @@ class DQN:
         self.run_old = self.run
         self.epoch = int(0)    # frame
         self.episode = int(0)  # training runs     
-        self.observe = int(50000) # vorlauf-frame ohne training
+        self.observe = int(150000) # vorlauf-frame ohne training
         self.step = self.observe #fixed observer value
-        self.discft = 0.987654321 #DISCFT 0.9993
+        self.discft = 0.97321 #DISCFT 0.9993
         cfg.discft = self.discft
         self.multiplier = float(30000/self.observe) #for saving (multiplies with self.observe)
         self.fpl = []
@@ -44,14 +44,14 @@ class DQN:
         self.obergrenze = int(28)
         self.flag = FLAG
         self.epsilon = INIT_EPSILON
-        self.epsilon_main = 0.42 #INIT_EPSILON
+        self.epsilon_main = 0.6 #INIT_EPSILON
         self.finep = FIN_EPSILON
-        self.REPLAYMEM = 100000 # REPLAY_MEMORY
+        self.REPLAYMEM = 150000 # REPLAY_MEMORY
         self.batchsize = BATCH_SIZE
         self.actions = ACTIONS
         self.repmem = deque()
         self.reduce = 1000000
-        self.reduce_main = 1000000  # self.reduce
+        self.reduce_main = 1230000  # self.reduce
         self.logs_path = 'R:\\temp\\' # '\\\\127.0.0.1\\temp\\'
         self.model_path = 'R:\\temp\\' # '\\\\127.0.0.1\\temp\\'
         self.states_path = 'R:\\temp\\'
@@ -60,16 +60,18 @@ class DQN:
         self.startReduce = False
         self.thisFrameWasTrained = False
         self.stepTime = ""
+        self.time_now = time.time()
+        self.time_stamp = time.time()
         #self.minibatch_old = [deque()]
-        if not os.path.exists(self.states_path + 'repmem.txt'):
-            # WRITE A BRANDNEW Logfile
-            print("'repmem.txt' nicht gefunden...")
+        # if not os.path.exists(self.states_path + 'repmem.txt'):
+        #     # WRITE A BRANDNEW Logfile
+        #     print("'repmem.txt' nicht gefunden...")
 
-            time.sleep(.5)
-            print ("--- starte training mit NULL replaymemory ---")
-            time.sleep(1)
-        else:
-            pass
+        #     time.sleep(.5)
+        #     print ("--- starte training mit NULL replaymemory ---")
+        #     time.sleep(1)
+        # else:
+        #     pass
 
         if not os.path.exists(self.states_path + 'training_states.txt'):
             # WRITE A BRANDNEW Logfile
@@ -77,11 +79,11 @@ class DQN:
             print("Eine nagelneue training_states.txt wird erstellt...")
             time.sleep(.5)
             fl = open(self.states_path + 'training_states.txt',"w")
-            fl.write("stateTime|epsilon|qvalue|run|fpl|epoch|totalScore|repmem")
+            fl.write("stateTime|epsilon|qvalue|run|fpl|epoch|totalScore|repmem|rundenZeit")
             fl.write("\r\n") 
             fl.close()  
             time.sleep(.5)
-            print ("--- starte training bei NULL ---")
+            print ("--- starte training bei NULL mit epsilon = 1 ---")
         else:
             df = pd.read_csv(self.states_path + 'training_states.txt', sep="|", header=0, encoding="utf8", parse_dates=True)
             latest = int(len(df.index))
@@ -102,6 +104,7 @@ class DQN:
                         self.lastRun = lastRun  
 
                     print ("--- starte training bei game Nr.", str(lastRun) ," ---")
+                    time.sleep(2)
             else:   
                 pass
  
@@ -109,32 +112,33 @@ class DQN:
 
 
         # Init weight and bias
-        with tf.device('/gpu:1'):
-            self.w1 = tf.Variable(tf.truncated_normal([8, 8, 4, 32], stddev = 0.01))
+        with tf.device('/gpu:0'):
+            self.w1 = tf.Variable(tf.truncated_normal([8, 8, 4, 32], stddev = 0.001))
             self.b1 = tf.Variable(tf.constant(0.01, shape = [32]))
-
-            self.w2 = tf.Variable(tf.truncated_normal([4, 4, 32, 64], stddev=0.01))
+        
+            self.w2 = tf.Variable(tf.truncated_normal([4, 4, 32, 64], stddev=0.001))
             self.b2 = tf.Variable(tf.constant(0.01, shape = [64]))
-
-            self.w3 = tf.Variable(tf.truncated_normal([3, 3, 64, 64], stddev = 0.01))
+        with tf.device('/gpu:1'):
+            self.w3 = tf.Variable(tf.truncated_normal([3, 3, 64, 64], stddev = 0.001))
             self.b3 = tf.Variable(tf.constant(0.01, shape = [64]))
 
         with tf.device('/gpu:0'):
-            self.wfc = tf.Variable(tf.truncated_normal([2304, 2304], stddev = 0.01)) # 2304,2000
+            self.wfc = tf.Variable(tf.truncated_normal([2304, 2304], stddev = 0.001)) # 2304,2000
             self.bfc = tf.Variable(tf.constant(0.01, shape = [2304])) #2000
+       # with tf.device('/gpu:1'):
+           # self.wfc1 = tf.Variable(tf.truncated_normal([1048, 982], stddev = 0.001)) #2000,1000
+         #   self.bfc1 = tf.Variable(tf.constant(0.01, shape = [982])) #1000
 
-            self.wfc1 = tf.Variable(tf.truncated_normal([2304, 2056], stddev = 0.01)) #2000,1000
-            self.bfc1 = tf.Variable(tf.constant(0.01, shape = [2056])) #1000
-
+        with tf.device('/gpu:0'):
+            self.wfc2 = tf.Variable(tf.truncated_normal([2304, 1580], stddev = 0.001)) #1000,972
+            self.bfc2 = tf.Variable(tf.constant(0.01, shape = [1580])) #972
         with tf.device('/gpu:1'):
-            self.wfc2 = tf.Variable(tf.truncated_normal([2056, 1028], stddev = 0.01)) #1000,972
-            self.bfc2 = tf.Variable(tf.constant(0.01, shape = [1028])) #972
-
-            self.wfc3 = tf.Variable(tf.truncated_normal([1028, 512], stddev = 0.01)) #972,512
-            self.bfc3 = tf.Variable(tf.constant(0.01, shape = [512])) #512
+            self.wfc3 = tf.Variable(tf.truncated_normal([1580, 55], stddev = 0.001)) #972,512
+            self.bfc3 = tf.Variable(tf.constant(0.01, shape = [55])) #512
             #tf.summary.histogram("self.wfc2", self.wfc2)
-
-            self.wto = tf.Variable(tf.truncated_normal([512, self.actions], stddev = 0.01)) #512
+            
+        with tf.device('/gpu:0'):
+            self.wto = tf.Variable(tf.truncated_normal([55, self.actions], stddev = 0.001)) #512
             self.bto = tf.Variable(tf.constant(0.01, shape = [self.actions]))
             #tf.summary.histogram("self.bto", self.bto)
 
@@ -142,14 +146,15 @@ class DQN:
         self.initNN()
     
     def initConvNet(self):
+        with tf.device('/gpu:1'):
         # input layer
-        self.input = tf.placeholder("float", [None, 84, 84, 4])
+            self.input = tf.placeholder("float", [None, 84, 84, 4])
         # Convolutional Neural Network
         # zero-padding
         # 84 x 84 x 4
         # 8 x 8 x 4 with 32 Filters
         # Stride 4 -> Output 21 x 21 x 32 -> max_pool 11 x 11 x 32
-        with tf.device('/gpu:0'):
+        
             tf.nn.conv2d(self.input, self.w1, strides = [1, 4, 4, 1], padding = "SAME", use_cudnn_on_gpu=True)
             conv1 = tf.nn.relu(tf.nn.conv2d(self.input, self.w1, strides = [1, 4, 4, 1], padding = "SAME", use_cudnn_on_gpu=True) + self.b1)
             pool = tf.nn.max_pool(conv1, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = "SAME")
@@ -167,39 +172,41 @@ class DQN:
             #fullyconnected = tf.nn.relu(tf.matmul(conv3_to_reshaped, self.wfc) + self.bfc)
             # Matrix (1, 2304) * (2304, 512)
 
-        with tf.device('/gpu:1'):
+        
             # Matrix (1, 2304) * (2304, 512)
             fullyconnected = tf.nn.relu(tf.matmul(conv3_to_reshaped, self.wfc) + self.bfc)
             # Matrix (1, 2304) * (2304, 2304)
 
         
-            fullyconnected1 = tf.nn.relu(tf.matmul(fullyconnected, self.wfc1) + self.bfc1)     
+            #fullyconnected1 = tf.nn.relu(tf.matmul(fullyconnected, self.wfc1) + self.bfc1)     
             # Matrix (1, 2304) * (2304, 512)
             
-            fullyconnected2 = tf.nn.relu(tf.matmul(fullyconnected1, self.wfc2) + self.bfc2)     
+            fullyconnected2 = tf.nn.relu(tf.matmul(fullyconnected, self.wfc2) + self.bfc2)     
             
             fullyconnected3 = tf.nn.relu(tf.matmul(fullyconnected2, self.wfc3) + self.bfc3)
             
             # output(Q) layer
             # Matrix (1, 512) * (512, ACTIONS) -> (1, ACTIONS)
+        with tf.device('/gpu:0'):
             self.output = tf.matmul(fullyconnected3, self.wto) + self.bto
         
 
     def initNN(self):
-        self.a = tf.placeholder("float", [None, self.actions])
-        self.y = tf.placeholder("float", [None]) 
-        out_action = tf.reduce_sum(tf.multiply(self.output, self.a), axis = 1)       
-            # Minimize error using cross entropy  
-        self.cost = tf.reduce_mean(tf.square(self.y - out_action))
-            # Gradient Descent   
-        self.optimize = tf.train.AdamOptimizer(0.00001).minimize(self.cost) #(learning_rate=0.01, beta1=0.93, beta2=0.999, epsilon=1).minimize(self.cost)
-        #tf.train.MonitoredTrainingSession()
-        self.saver = tf.train.Saver(max_to_keep=3) #max_to_keep=3, keep_checkpoint_every_n_hours=2
         os.environ["CUDA_VISIBLE_DEVICES"] = '0,1' #use GPU with ID=0
         conf = tf.ConfigProto()
-        # conf.gpu_options.per_process_gpu_memory_fraction = 1
+        #conf.gpu_options.per_process_gpu_memory_fraction = 1
+        
+        with tf.device('/gpu:0'):
+            self.a = tf.placeholder("float", [None, self.actions])
+            self.y = tf.placeholder("float", [None]) 
+            out_action = tf.reduce_sum(tf.multiply(self.output, self.a), axis = 1)       
+            # Minimize error using cross entropy  
+            self.cost = tf.reduce_mean(tf.square(self.y - out_action))
+            # Gradient Descent   
+            self.optimize = tf.train.AdamOptimizer(0.00001).minimize(self.cost) #(learning_rate=0.01, beta1=0.93, beta2=0.999, epsilon=1).minimize(self.cost)
+            #tf.train.MonitoredTrainingSession()
 
-        # sess = tf.Session(config = config)
+        self.saver = tf.train.Saver(max_to_keep=2) #max_to_keep=3, keep_checkpoint_every_n_hours=2    
         self.session = tf.InteractiveSession(config=conf)
         self.session.run(tf.global_variables_initializer())
         # self.writer.add_graph(self.session.graph)
@@ -209,6 +216,7 @@ class DQN:
         if checkpoint and checkpoint.model_checkpoint_path:
             self.saver.restore(self.session, checkpoint.model_checkpoint_path)
             
+
     def train(self):
         # DQN
         minibatch = random.sample(self.repmem, self.batchsize)
@@ -220,7 +228,10 @@ class DQN:
         # this_qv = [data[7] for data in minibatch]
         this_replayCount = [data[5] for data in minibatch]
         y_batch = []
-        Q_batch = self.output.eval(feed_dict={self.input : s_t1_batch})
+
+        with tf.device('/gpu:0'):
+            Q_batch = self.output.eval(feed_dict={self.input : s_t1_batch})
+
         for i in range(0,self.batchsize):
             done = minibatch[i][4]
 
@@ -229,8 +240,10 @@ class DQN:
                 y_batch.append(r_batch[i])
             else:
                 y_batch.append(r_batch[i] + cfg.discft * np.max(Q_batch[i]))
+        # self.repmem.append((   self.s_t, action, reward, tmp, done, int(0), int(len(self.repmem)-1), np.max(self.qv)   ))
 
-        self.optimize.run(feed_dict={self.y : y_batch, self.a : a_batch, self.input : s_batch})
+        with tf.device('/gpu:1'):
+            self.optimize.run(feed_dict={self.y : y_batch, self.a : a_batch, self.input : s_batch})
 
         # ------SAVE Training Model -------
         if (self.epoch % (self.step*self.multiplier) == 0):
@@ -271,10 +284,12 @@ class DQN:
         
     def getAction(self):
         global eps, a
+        self.time_now = time.time()
+        # self.time_stamp = time.time()
 
         # action[0] LEFT    #action[1] MIDDLE    #action[2] RIGHT    #action[3] BUTTON
-
-        Q_val = self.output.eval(feed_dict={self.input : [self.s_t]})[0]
+        with tf.device('/gpu:1'):
+            Q_val = self.output.eval(feed_dict={self.input : [self.s_t]})[0]
 
         self.qv = Q_val
         self.myQV.append(np.max(self.qv))
@@ -314,10 +329,13 @@ class DQN:
 
         elif (self.epsilon <= self.finep):
             self.epsilon = self.epsilon_main
+            self.reduce = self.reduce/2 # self.reduce_main
             pass
             
                 # ------------------------------------------------------- #
-        if (self.run > 0) and (self.epoch > self.step) and not (self.run_old == self.run):  # 
+        if ((self.time_now - self.time_stamp) >= 5) and (self.run > 0) and (self.epoch > self.step): #  and not (self.run_old == self.run):  # 
+                
+                self.time_stamp = self.time_now  
                 # ---------------------------------------  save trainingstates  --------------------------------------------------
                 fl = open(self.states_path +'training_states.txt',"a") #states.txt' + time.strftime("%d.%m.%Y_%H_%M_%S" + '
                 # time  |  epsilon  |  Q-value  |  run  |  fpl  |  epoch  |  totalscore
@@ -325,7 +343,7 @@ class DQN:
                 fl.write("|")
                 fl.write(str(self.epsilon))
                 fl.write("|")
-                sqv = str(np.mean(self.qv))
+                sqv = str(qv) #np.mean(self.qv))
                 fl.write(sqv) #np.max(self.qv)
                 fl.write("|")
                 fl.write(str(int(self.run) + int(cfg.lastRun)))
@@ -337,14 +355,20 @@ class DQN:
                 fl.write(str(cfg.totalScore)) #np.mean(self.score)))
                 fl.write("|")
                 fl.write(str(len(self.repmem)/10000))
+                fl.write("|")
+                if (cfg.done == True):
+                    fl.write(str(round((time.time()-cfg.rundenZeit),2)))
+                    cfg.done = False
+                else:
+                    fl.write("0")
                 fl.write("\r\n") 
                 fl.close()  
+
                 self.observe += self.step   
                 self.myQV = []
                 self.fpl = []
                 self.score = []
                 self.run_old = self.run
-
                # print ("training_states.txt updated.",end="\n")
 
         eps = self.epsilon
@@ -380,7 +404,7 @@ class agent:
         # initialize
         # discount factor 0.99
         #       DISCFT, FLAG,  INIT_EPSILON,    FIN_EPSILON, REPLAY_MEMORY,  BATCH_SIZE,   ACTIONS
-        ag = DQN(   .956,   0,       1,           0.000001,     300000,        32,         4)
+        ag = DQN(   .956,   0,       1,           0.0000001,     300000,        100,         4)
                         # 2.0004979999997333e-06
         g = game.gameState()
 
@@ -399,10 +423,8 @@ class agent:
             a = ag.getAction()
             s_t1, r, done = g.frameStep(a) # get infos (state) from game
             cfg.reward = r
-            s_t1, a = self.screen_handle(s_t1,a)
-                
+            s_t1, a = self.screen_handle(s_t1,a) 
             ts, qv = ag.addReplay(s_t1, a, r, done)
-
             qv_old = qv
             cfg.qValue = qv
             fpl = ts - int(self.ts_old)
@@ -415,14 +437,17 @@ class agent:
             ag.stepTime = str(self.stepTime)
             cfg.stepTime = self.stepTime
             if done == True:
+                cfg.done = done
                 sc, ep = g.retScore()
                 cfg.totalScore = sc
                 self.ts_old = ts
                 self.stepTime = round((time.time() - now_time)%60, 5)
-                print("discft:", round(cfg.discft,4), "repmem:", len(ag.repmem), "run:", ag.run,"episode:",ag.episode,"score:", sc,"rew:", r,"frame:", ts,"qv:", round(qv,3),"fpl:",fpl,"epsilon:",round(ag.epsilon,6), "stepTime:", self.stepTime)
+                cfg.thisRundenZeit = round((time.time()-cfg.rundenZeit),2)
+                print("discft:", round(cfg.discft,4), "repmem:", len(ag.repmem), "run:", ag.run,"episode:",ag.episode,"score:", sc,"rew:", r,"frame:", ts,"qv:", round(qv,3),"fpl:",fpl,"epsilon:",round(ag.epsilon,6), "stepTime:", self.stepTime, "rundenZeit:", str(cfg.thisRundenZeit)+"sec.")
                 print(end="\r")
                 ag.fpl = []
                 ag.score = []
+
                 
             else:
                 self.stepTime = round((time.time() - now_time)%60, 5)
