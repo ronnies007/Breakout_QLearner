@@ -95,8 +95,8 @@ class gameState:
                 self.score = int(0)
                 self.polyCollissionList = []
                 self.mouseVelX , self.mouseVelY = 0,0
-                self.rewardSave = float(-0.1)
-                self.reward = float(-0.1)
+                self.rewardSave = float(-0.01)
+                self.reward = float(-0.01)
                 self.framesAlive = int(0)
                 self.scA = []
                 self.gridx = []
@@ -109,6 +109,7 @@ class gameState:
                 self.time_stop = datetime(2019,3,6,0,0,0)   
                 self.polyCollissionList = [self.paddlePointList,self.borderPointList]
                 self.ballAlive_frames = 0
+                
 
 
         def frameStep(self, action):
@@ -118,9 +119,35 @@ class gameState:
             #sf = pygame.Surface.convert(self.screen) 
             #self.scA.append(sf)
             image_data, reward, done = self.runGame(action)
-            cfg.reward = self.reward
+            cfg.reward = reward
             return image_data, reward, done
 
+
+        def drawStuff(self):
+
+                # print ("polycollList len:",len(self.polyCollissionList))
+                if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
+                        self.initBricks()
+                        
+                self.screen.fill((0,0,0))
+
+                pygame.draw.circle(self.screen, (220, 220, 220), self.ball.getPos(), self.ball.getRadius(), 0)
+                pygame.draw.polygon(self.screen,  (150, 150, 150), self.borderPointList, 5)       
+                # -------------  draw paddle  -------------
+                if (len(self.polyCollissionList) > 0):    
+                        pygame.draw.polygon(self.screen, self.paddleColor, self.polyCollissionList[0], 0)
+                # -------------  draw the other collision objects  -------------
+                for o in range(0,len(self.polyCollissionList)):
+                        if not (o == 0) and not (o == 1):
+                                pygame.draw.polygon(self.screen, self.paddleColor, self.polyCollissionList[o], 0)
+                # -------------  draw helping lines of collisions  -------------
+                # for j in range(0,len(self.collLineList)):
+                #        pygame.draw.polygon(self.screen, (225, 100, 100), self.collLineList[j], 2)        
+                
+                #  -------------  Leerlauf-Watchdog  -------------
+                #print (self.ballAlive_frames)
+                FPSCLOCK.tick(FPS) 
+                pygame.display.update()       
 
         def runGame(self, action):
             global run
@@ -135,15 +162,11 @@ class gameState:
                 self.direction = RIGHT
             elif (action[3] == 1):
                 self.direction = BUTTON
-           
-            self.reward = -0.1 # -= 0.0000532 * (len(self.polyCollissionList)-2)
+            cfg.action = self.direction
+            self.reward = 0 # -= 0.0000532 * (len(self.polyCollissionList)-2)
             cfg.reward = self.reward
             done = False
-            # print ("polycollList len:",len(self.polyCollissionList))
-            if (len(self.polyCollissionList) < 3) and (self.ball.getPos()[1] > self.FIELDHEIGHT-100):
-                self.initBricks()
-    
-            self.screen.fill((0,0,0))
+            
             sys.stdout.flush()
             events = pygame.event.get()
             for event in events:
@@ -173,31 +196,37 @@ class gameState:
                                             self.polyCollissionList[0] = movedPaddle
 
                     if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_ESCAPE:      
-                                            sys.exit()               
-                            if event.key == pygame.K_SPACE:
-                                    done2=False
-                                    while not done2:
-                                            events = pygame.event.get()
-                                            for event in events:
-                                                    if event.type == pygame.KEYDOWN:
-                                                            if event.key == pygame.K_SPACE:        
-                                                                    done2=True
+
+                        if event.key == pygame.K_ESCAPE: 
+                                cfg.saveRepmemAndExit = True                
+                                # sys.exit()               
+                        if event.key == pygame.K_SPACE:
+                                done2=False
+                                while not done2:
+                                        events = pygame.event.get()
+                                        for event in events:
+                                                if event.type == pygame.KEYDOWN:
+                                                        if event.key == pygame.K_SPACE:        
+                                                                done2=True
 
             
             # -------------------------------   BRICK getroffen ?? --> hier wird er geloescht !!  -------------------------------
             if not (self.deleteThis == -1):
-                del self.polyCollissionList[self.deleteThis]        
+                del self.polyCollissionList[self.deleteThis]   
+                if (len(self.polyCollissionList) < 3):
+                        cfg.rundeDone = True     
+                        cfg.rundenFZeit = round((time.time()-cfg.rundenZeit),2)
                 self.score += 1
                 self.ballAlive_frames = 0
                 self.totalscore += 1
                 # print ("len(polyCollissionList):",len(self.polyCollissionList))
                 self.deleteThis = -1
-                self.reward = 3
+                self.reward = 1
                 cfg.reward = self.reward
+                self.drawStuff()
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
                 cfg.aliveGameTime = time.time()
-                return image_data, self.reward, done
+                return image_data, self.reward, False
 
 
             oldscore = self.score
@@ -217,13 +246,16 @@ class gameState:
             self.posY = int(self.posY)
 
             if (self.posY >= self.FIELDHEIGHT ):   # ---  ball CRASHED  ---
-                self.reward = -10 # -54 / (len(self.polyCollissionList)-2)
+                self.reward = -1 # -54 / (len(self.polyCollissionList)-2)
                 cfg.reward = self.reward
                 done = True
                 # print("WAS HERE CRASHED !!!")
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
                 #time.sleep(1)
                 #self.newBall()
+                cfg.done = True
+                cfg.rundenFZeit = round((time.time() - cfg.rundenZeit),2)
+                self.drawStuff()
                 return image_data, self.reward, done
         
             else: 
@@ -280,24 +312,11 @@ class gameState:
                             #self.ball.setPos([self.posX,self.posY])# = [self.posX,self.posY]
 
                 self.ball.setPos([self.posX,self.posY])# = [self.posX,self.posY]
-                pygame.draw.circle(self.screen, (220, 220, 220), self.ball.getPos(), self.ball.getRadius(), 0)
-                pygame.draw.polygon(self.screen,  (150, 150, 150), self.borderPointList, 5)       
                 
-                # -------------  draw paddle  -------------
-                if (len(self.polyCollissionList) > 0):    
-                    pygame.draw.polygon(self.screen, self.paddleColor, self.polyCollissionList[0], 0)
-                # -------------  draw the other collision objects  -------------
-                for o in range(0,len(self.polyCollissionList)):
-                    if not (o == 0) and not (o == 1):
-                        pygame.draw.polygon(self.screen, self.paddleColor, self.polyCollissionList[o], 0)
-                # -------------  draw helping lines of collisions  -------------
-                # for j in range(0,len(self.collLineList)):
-                #        pygame.draw.polygon(self.screen, (225, 100, 100), self.collLineList[j], 2)        
+                self.drawStuff()
                 
-                #  -------------  Leerlauf-Watchdog  -------------
-                #print (self.ballAlive_frames)
                 cfg.ballAlive_frames = self.ballAlive_frames
-                if (self.ballAlive_frames > 3600) and (cfg.ballReleased == True):
+                if (self.ballAlive_frames > 1800) and (cfg.ballReleased == True):
                         fl = open("r://WATCHDOG-alert.txt","a")
                         time.sleep(.5)
                         fl.write("\r\n") 
@@ -319,8 +338,7 @@ class gameState:
                         self.leng = 0
 
                 image_data = pygame.surfarray.array3d(pygame.display.get_surface())
-                FPSCLOCK.tick(FPS) 
-                pygame.display.update()
+                
                 self.scA = []
                 if (done==True): 
                         cfg.aliveGameTime = time.time() - cfg.aliveGameTime
@@ -345,15 +363,13 @@ class gameState:
             self.paddleColor = (150,150,150)
             self.deleteThis = int(-1)
             self.hitPointList = []
-            i = int(0)
             self.polyCollissionList = []
             vPlus = 0
-            hPlus = 25
-            columns = 9
+            columns = 6
             rows = 6
             count = int(0)
             for z in range(0,rows):
-                    hPlus = 25
+                    hPlus = 8
                     for n in range(0,columns):
                             self.xybrickList = []
                             #self.brick = brick.newBrick(count, 1)
@@ -361,15 +377,17 @@ class gameState:
                                     posCroud = [self.FIELDWIDTH/2-columns*20, self.FIELDHEIGHT/3-rows*15]
                                     self.xybrickList.append([x+hPlus+posCroud[0], y+vPlus+posCroud[1]])
                                     
-                            hPlus += 35
+                            hPlus += 40
                             count += 1
                             self.brickMuster.append(self.xybrickList)
-                    vPlus += 20
-            
+                    vPlus += 25
+            del self.xybrickList
             self.polyCollissionList = [self.paddlePointList,self.borderPointList]
             self.polyCollissionList.extend(self.brickMuster)
             self.collLineList = []
             cfg.rundenZeit = time.time()
+            
+            # cfg.rundeDone = True
 
 
         def bounceBall(self):
@@ -406,6 +424,7 @@ class gameState:
                                     delta += 0.04
 
                             if not (disc < 0) and not (a==0):  
+                                
                                 sqrt_disc = math.sqrt(disc)
                                 t1 = (-b + sqrt_disc) / (2 * a)
                                 t2 = (-b - sqrt_disc) / (2 * a)
@@ -427,6 +446,9 @@ class gameState:
                     # -----------------------------------------------------   search for closest hitpoint   ------------------------------
                     countPairs = 0
                     if (1 >= len(self.hitPointList) > 0):     # nur ein Paar HitPoints
+                            if (polIndex == 0):
+                                pass
+                                #self.reward = 1
                             self.ball.addToBallPosArray(self.hitPointList[0][0])
                             self.ball.addToBallPosArray(self.hitPointList[0][1])
                             self.reflectBall(polygon,hitIndex,self.hitPointList[0][0],self.hitPointList[0][1],0)
@@ -434,6 +456,9 @@ class gameState:
                             self.hitPointList = []
                             self.hitPointIndexList = []
                     elif (len(self.hitPointList) > 1):              #  mehr als ein Paar Hitpoints --- SEARCH BEGINN ---
+                            if (polIndex == 0):
+                                pass
+                               #self.reward = 1
                             #   print ("polIndex:",polIndex)
                             #   print ("len(self.hitPointList):", len(self.hitPointList))
                             #   print ("self.hitPointList:", self.hitPointList)
@@ -516,6 +541,11 @@ class gameState:
                                                                     self.ballMoveVector.rotate(randAngle)
                                                             if (polIndex>1):
                                                                 self.deleteThis = polIndex
+                                                               # self.reward = 1
+                                                                #cfg.reward = self.reward
+                                                               # image_data = pygame.surfarray.array3d(pygame.display.get_surface())
+                                                                #cfg.aliveGameTime = time.time()
+                                                              # return image_data, self.reward, False
                                                     #            print("deleted polyIndex:",self.deleteThis,"lineIndex.:", str(shortestIndex))
                                                             else:
                                                                     self.deleteThis = -1
@@ -557,6 +587,11 @@ class gameState:
                                                                     self.ballMoveVector.rotate(randAngle)
                                                             if (polIndex>1):
                                                                 self.deleteThis = polIndex
+                                                                #self.reward = 1
+                                                                #cfg.reward = self.reward
+                                                                #image_data = pygame.surfarray.array3d(pygame.display.get_surface())
+                                                                #cfg.aliveGameTime = time.time()
+                                                               # return image_data, self.reward, False
                                                         #         print("deleted polyIndex:",self.deleteThis,"lineIndex.:", str(shortestIndex))
                                                             else:
                                                                     self.deleteThis = -1
@@ -598,8 +633,8 @@ class gameState:
             #self.ballSpeed = math.sqrt( (self.velX*self.velX) + (self.velY*self.velY) )
             self.score = int(0)
             #self.totalscore = int(0)
-            self.rewardSave = float(-0.1)
-            self.reward = float(-0.1)
+            self.rewardSave = float(-0.01)
+            self.reward = float(-0.01)
             cfg.reward = self.reward
             self.framesAlive = int(0)
             self.scA = []
@@ -645,6 +680,11 @@ class gameState:
                 if (ind>1):
                         #if len(poly) > 10:
                         self.deleteThis = ind
+                        #self.reward = 1
+                        #cfg.reward = self.reward
+                        #image_data = pygame.surfarray.array3d(pygame.display.get_surface())
+                        #cfg.aliveGameTime = time.time()
+                        #return image_data, self.reward, False
                    #     print("deleted polyIndex:",self.deleteThis,"lineIndex.:", str(si))
                    #     print ("len(getBallPosArray):",len(self.ball.getBallPosArray()))
                 else:
@@ -724,5 +764,21 @@ if __name__ == '__main__':
     g = gameState()
     while True:
         g.runGame([0,1,0,0])
+
+
+        sys.stdout.flush()
+        events = pygame.event.get()
+        for event in events:
+                if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:      
+                                sys.exit()               
+                        if event.key == pygame.K_SPACE:
+                                done2=False
+                                while not done2:
+                                        events = pygame.event.get()
+                                        for event in events:
+                                                if event.type == pygame.KEYDOWN:
+                                                        if event.key == pygame.K_SPACE:        
+                                                                done2=True
         #time.sleep(2)
 # g.message_display('You Crashed')
