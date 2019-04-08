@@ -9,7 +9,7 @@ from dateutil import parser
 from datetime import datetime
 import pandas as pd
 import numpy as np
-import datetime
+#import datetime
 import math
 import matplotlib.dates as mdates
 from matplotlib.lines import Line2D
@@ -44,7 +44,7 @@ def getMinMax(df_):
     cols1 = []
     cols1.append(int(df_['totalScore'].max()))
     cols1.append(df_['qvalue'].max())
-    cols1.append(int(df_['fpl'].max())/10)
+ #   cols1.append(int(df_['fpl'].max())/10)
     cols1.append(df_['epsilon'].max())
     cols1.append(np.max((df_['totalScore']/df_['fpl'])/10))
     cols1.append(df_['repmem'].max())
@@ -59,7 +59,7 @@ def getMinMax(df_):
     cols2 = []
     cols2.append(int(df_['totalScore'].min()))
     cols2.append(df_['qvalue'].min())
-    cols2.append(int(df_['fpl'].min())/10)
+   # cols2.append(int(df_['fpl'].min())/10)
     cols2.append(df_['epsilon'].min())
     cols2.append(np.min((df_['totalScore']/df_['fpl'])/10))
     cols1.append(df_['repmem'].min())
@@ -91,6 +91,8 @@ while (f == 0):
         if (len(df.index) > 3): 
             f = 1
             df.fillna(0)
+            df['rundenZeit'] = df['rundenZeit'][df['rundenZeit'] > 0.0]
+            ##df['qvalue'] = df['qvalue'][df['qvalue'] <= 30]
         else:
             print ("waiting for data...", end="\r")        
     except:     
@@ -108,7 +110,7 @@ df['epsilon'] = df['epsilon'] * 10
 dmaxVal, dminVal = getMinMax(df)
 
 print ("dmaxVal, dminVal:", dmaxVal,",", dminVal)
-zoomX1, zoomX2, zoomY1, zoomY2 = -10, lastEpisode + 10, dminVal-10, dmaxVal+10  # specify the limits
+zoomX1, zoomX2, zoomY1, zoomY2 = -3, lastEpisode + 1000, dminVal-3, dmaxVal+3  # specify the limits # specify the limits  # specify the limits
 xview = lastEpisode - df['epoch'].iloc[-2]
 lastEpisode_old = lastEpisode
 lastRun_old = lastRun
@@ -135,6 +137,8 @@ def resetView():
     global ax1, zoomX1, zoomX2, zoomY1, zoomY2, plt, sw, lastEpisode, dmaxVal, dminVal, df, states_path
     df = pd.read_csv(states_path + 'training_states.txt', sep="|", header=0, encoding="utf8", parse_dates=True)
     df.fillna(0)
+    df['rundenZeit'] = df['rundenZeit'][df['rundenZeit'] > 0.0]
+    ##df['qvalue'] = df['qvalue'][df['qvalue'] <= 30]
     df.totalScore = df.totalScore/10
     df.repmem = df.repmem/10
     df.fpl = df.fpl/100
@@ -143,7 +147,7 @@ def resetView():
 
     dmaxVal, dminVal = getMinMax(df)
 
-    zoomX1, zoomX2, zoomY1, zoomY2 = -10, lastEpisode + 10, dminVal-10, dmaxVal+10  # specify the limits
+    zoomX1, zoomX2, zoomY1, zoomY2 = -3, lastEpisode + 1000, dminVal-3, dmaxVal+3  # specify the limits # specify the limits  # specify the limits
     sw = False
     plt.xlim(zoomX1, zoomX2)
     plt.ylim(zoomY1, zoomY2)
@@ -182,6 +186,8 @@ def animate(i):
     try:
         df = pd.read_csv(states_path + 'training_states.txt', sep="|", header=0, encoding="utf8", parse_dates=True)
         df.fillna(0)
+        df['rundenZeit'] = df['rundenZeit'][df['rundenZeit'] > 0.0]
+        ##df['qvalue'] = df['qvalue'][df['qvalue'] <= 30]
         df.totalScore = df.totalScore/10
         swt = True
 
@@ -194,7 +200,9 @@ def animate(i):
             normalizeData()
         lastEpisode = int(df['epoch'].max()) #int(df['epoch'].iloc[-1])
         # korrekturen
-        lastRun = int(df['run'].max())
+        if not (int(df['run'].max()) == lastRun_old):
+            lastRun_old = lastRun
+            lastRun = int(df['run'].max())
         df.repmem = df.repmem/10
         df.fpl = df.fpl/100
         #df['totalscore'] = df['totalscore'] / 4
@@ -243,12 +251,12 @@ def animate(i):
         this=str(df.stateTime[-1:])
         print (this)
         this=pd.to_timedelta(str(df['stateTime'].iloc[-1]-df['stateTime'].iloc[-2]))
-        print ("Delta:" , str(this))
+        print ("step Time-Delta:" , str(this))
 
         ax1.set_title('cnn training state  @trained frame '+ str(int(np.max(df.epoch)+2)) + ' in ' + str(df.stateTime.iloc[-1] - df.stateTime.iloc[0])) # + "frameTime: " + str(thisFrameTime))
 
         for label in ax1.xaxis.get_ticklabels(): label.set_rotation(20)  #x-achse beschriftung rotieren
-        print ("hello here")
+        #print ("hello here")
         
         #df.M1State = df.M1State/10
         #df.newPos = df.newPos/10
@@ -261,13 +269,16 @@ def animate(i):
         print ("lastEpisode: ", lastEpisode)
 
         #         time | epsilon | Q-value | run | fpl | epoch | totalscore
-
+        lastRun_old = df['run'].iloc[-2]
+        lastRun = int(df['run'].max())
+        print ("sw:",sw)
+        print(lastRun_old,lastRun)
         #zoomX1, zoomX2, zoomY1, zoomY2 = 0, lastEpisode, -1, 8 # specify the limits
         if (sw==False):        # nicht gezoomt oder bewegt = reset
             if not (lastRun_old == lastRun): 
                 dmaxVal, dminVal = getMinMax(df)         
-                zoomX1, zoomX2, zoomY1, zoomY2 = -10, lastEpisode + 10, dminVal-10, dmaxVal+10  # specify the limits
-                lastRun_old = lastRun
+                zoomX1, zoomX2, zoomY1, zoomY2 = -3, lastEpisode + 1000, dminVal-3, dmaxVal+3  # specify the limits # specify the limits  # specify the limits
+                #lastRun_old = lastRun
                 #xview = int(df['epoch'].iloc[-1]) - int(df['epoch'].iloc[-2]) 
                 plt.xlim(zoomX1, zoomX2)
                 plt.ylim(zoomY1, zoomY2)
@@ -278,10 +289,12 @@ def animate(i):
                 plt.ylim(zoomY1, zoomY2)
 
         elif (sw==True):      # gezoomt oder bewegt
+            print("@gezoomt 1st step")
             if not (lastRun_old == lastRun):              
-                lastRun_old = lastRun
-                xdiff = int(df['epoch'].iloc[-1]) - int(df['epoch'].iloc[-2]) 
-                print ("xdiff:",xdiff)
+                #lastRun_old = lastRun
+                lastEpisode = int(df['epoch'].max()) #int(df['epoch'].iloc[-1])
+                xdiff = int(df['epoch'].iloc[-1])  - int(df['epoch'].iloc[-2]) 
+                print ("xdiff@gezoomt:",xdiff)
                 zoomX1 += xdiff#*(1/(zoomX2-zoomX1))
                 zoomX2 += xdiff#*(1/(zoomX2-zoomX1))
                 plt.xlim(int(zoomX1), int(zoomX2))
@@ -293,18 +306,21 @@ def animate(i):
                 plt.ylim(zoomY1, zoomY2)
                 zoomX1, zoomX2 = ax1.get_xlim()
 
-        plot7, = plt.plot(0, 0, label="rundZt.", marker="o", picker=3, linewidth=0, color='k')
-        for a,b in zip(df.epoch, df['rundenZeit']): 
-            if not (b==0):
-                plt.text(a, b, str(b))
-                plot7, = plt.plot(df.epoch, df['rundenZeit']/100, label="rundZt.", marker="o", picker=3, linewidth=0, color='k')
+        
+        #df['rundenZeit'] = df['rundenZeit'][df['rundenZeit'] > 0.0]
+        ###df['qvalue'] = df['qvalue'][df['qvalue'] <= 30]
+        
+        # for a,b in zip(df.epoch, df['rundenZeit']): 
+        #     if not (b==0):
+        #         #plt.text(a, b, str(b))  df.epoch, df['rundenZeit']
+        #         plot7, = plt.plot(a, b/100, label="rundZt.", marker="o", picker=3, linewidth=0, color='k')
         plot2, = plt.plot(df.epoch, df['qvalue'], label="qv.", marker="", picker=3, linewidth=2, color='b')
-        plot6, = plt.plot(df.epoch, df['repmem'], label="repmem", marker="+", picker=5, linewidth=.8, color='w')
+        plot6, = plt.plot(df.epoch, df['repmem'], label="repmem", marker="+", picker=5, linewidth=1.2, color='orange')
         plot5, = plt.plot(df.epoch, (df['totalScore']/df['fpl'])/10, label="eat-ratio", marker="", picker=3, linewidth=.8, color='m')
         plot4, = plt.plot(df.epoch, df['fpl'], label="fpl", marker="", picker=3, linewidth=1, color='grey')
         plot1, = plt.plot(df.epoch, df['epsilon'], label="eps.", marker="", picker=3, linewidth=1.6, color='r')
         plot3, = plt.plot(df.epoch, df['totalScore'], label="score", marker="", picker=1, linewidth=2, color='c')
-
+        plot7, = plt.plot(df.epoch, df['rundenZeit']/100 , label="rundZt.", marker="o", picker=3, linewidth=0, color='k')
         
 
         
@@ -316,7 +332,7 @@ def animate(i):
         #ax2 = ax1.twinx()
         #ax2.set_ylim([-30,30])
 
-        plt.legend([plot1,plot2,plot3,plot4,plot5,plot6,plot7],['epsilon *10', 'avg. qv','score / 10','avg. fpl /100','eat-ratio /10','repmem /100000',"rundZt.(sec.)/100"], loc="upper left",  bbox_transform=fig.transFigure)
+        plt.legend([plot1,plot2,plot3,plot4,plot5,plot6,plot7],['epsilon *10', 'avg. qv*10','score / 10','avg. fpl /100','eat-ratio /10','repmem /100000',"rundZt.(sec.)/100"], loc="upper left",  bbox_transform=fig.transFigure)
         #fig.savefig('test.pdf')
 
         #ax2.plot(df.time, df['fehler'], label="F1", marker="o", color='C7', picker=5)
